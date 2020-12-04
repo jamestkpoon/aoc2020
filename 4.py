@@ -37,7 +37,7 @@ def cast_year_and_check_inclusive_range(s, l,u):
     except: return False
     
 def is_valid_passport_id(s, length=9):
-    if len(s) != 9: return False
+    if len(s) != length: return False
     
     try:
         int(s)
@@ -86,7 +86,7 @@ if __name__ == '__main__':
             if passport['ecl'] not in [ 'amb', 'blu', 'brn', 'gry', 'grn', 'hzl', 'oth' ]: continue
             if not is_valid_passport_id(passport['pid']): continue
             if not is_valid_hair_color(passport['hcl']): continue
-            if not is_valid_height(passport['hgt'], {'cm': [150,193], 'in': [59,76]}): continue
+            if not is_valid_height(passport['hgt'], { 'cm': [150,193], 'in': [59,76] }): continue
             
             valid_ += 1
     
