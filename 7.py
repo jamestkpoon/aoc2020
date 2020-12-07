@@ -33,7 +33,7 @@ def check_if_key_leads_down_to(dict, start_key, desired_key):
     return False
 
 def count_child_values(dicto, start_key, multiplier=1):
-    out_ = multiplier * sum([ v for v in dicto[start_key].values() ])
+    out_ = multiplier * sum(list(dicto[start_key].values()))
     for k,v in dicto[start_key].items():
         out_ += count_child_values(dicto, k, v*multiplier)
 
