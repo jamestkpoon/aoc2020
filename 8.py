@@ -53,7 +53,7 @@ class Program:
             accumulator_, norepeat_ = self.run_norepeat()
             if norepeat_: return accumulator_            
 
-            self._program = deepcopy(program_backup_)
+            self._program = program_backup_
 
 
 if __name__ == '__main__':
