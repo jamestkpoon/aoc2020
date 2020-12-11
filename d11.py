@@ -1,5 +1,4 @@
 import sys
-from collections import Counter
 import numpy as np
 
 FLOORSPACE_VALUE = 0
@@ -53,13 +52,12 @@ def iterate(map_, get_neighbors_fn, occupied_seat_threshold):
     for r in range(map_.shape[0]):
         for c in range(map_.shape[1]):
             if map_[r,c] == FLOORSPACE_VALUE: continue
-            neighbors_ = get_neighbors_fn(map_, r,c)
-            counter_ = Counter(neighbors_)
+            num_occupied_neighbors_ = get_neighbors_fn(map_, r,c).count(OCCUPIED_SEAT_VALUE)
             if map_[r,c] == EMPTY_SEAT_VALUE:
-                if counter_[OCCUPIED_SEAT_VALUE] == 0:
+                if num_occupied_neighbors_ == 0:
                     out_[r,c] = OCCUPIED_SEAT_VALUE
             elif map_[r,c] == OCCUPIED_SEAT_VALUE:
-                if counter_[OCCUPIED_SEAT_VALUE] >= occupied_seat_threshold:
+                if num_occupied_neighbors_ >= occupied_seat_threshold:
                     out_[r,c] = EMPTY_SEAT_VALUE
 
     return out_
