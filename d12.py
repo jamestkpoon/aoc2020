@@ -24,9 +24,7 @@ class Ship:
             elif cmd[0] == 'E': self._pose[1] -= cmd[1]
             elif cmd[0] == 'L': self._pose[2] += np.deg2rad(cmd[1])
             elif cmd[0] == 'R': self._pose[2] -= np.deg2rad(cmd[1])
-            elif cmd[0] == 'F':
-                self._pose[0] += round(cmd[1] * np.cos(self._pose[2]))
-                self._pose[1] += round(cmd[1] * np.sin(self._pose[2]))
+            elif cmd[0] == 'F': self._pose[:2] += np.round(cmd[1] * np.asarray([ np.cos(self._pose[2]), np.sin(self._pose[2]) ]))
             else: print("Got unrecognized cmd " + str(cmd))
         
     def execute_waypoint_commands(self, cmds):
