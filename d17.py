@@ -4,19 +4,23 @@ from d3 import to_binary_map
 
 def in_bounds(coord, shape):
     return np.all(np.logical_and(coord >= 0, coord < np.asarray(shape)))
+    
+def gen_neighbors(nd):
+    out_ = []
+    for n in np.ndindex(*([ 3 ] * nd)):
+        if n.count(1) < nd: out_.append(n)
+    
+    return np.asarray(out_) - 1
 
-def iterate(world):
+def iterate(world, local_neighbors):
     out_ = np.zeros(np.asarray(world.shape) + 2, dtype=np.bool)
     for world_coord in np.ndindex(*out_.shape):
         world_coord_old_ = np.asarray(world_coord) - 1
+        
         active_neighbors_ = 0
-        for neighbor_coord in np.ndindex(*([ 3 ] * len(world.shape))):
-            neighbor_coord_ = np.asarray(neighbor_coord) - 1
-            if np.all(neighbor_coord_ == 0): continue
-            neighbor_world_coord_ = neighbor_coord_ + world_coord_old_
-            if not in_bounds(neighbor_world_coord_, world.shape): continue
-            if world[tuple(neighbor_world_coord_)]: active_neighbors_ += 1
-
+        for n in filter(lambda c: in_bounds(c, world.shape), world_coord_old_ + local_neighbors):
+            if world[tuple(n)]: active_neighbors_ += 1
+            
         if in_bounds(world_coord_old_, world.shape):
             if world[tuple(world_coord_old_)]:
                 if active_neighbors_ == 2 or active_neighbors_ == 3:
@@ -35,8 +39,10 @@ if __name__ == '__main__':
     elif sys.argv[2] == '2':
         world_ = to_binary_map(data_)[np.newaxis,np.newaxis,:,:]
         
+    local_neighbors_ = gen_neighbors(len(world_.shape))
+        
     for i in range(6):
-        world_ = iterate(world_)
+        world_ = iterate(world_, local_neighbors_)
     out_ = np.sum(world_)
         
     print(out_)
