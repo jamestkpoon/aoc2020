@@ -161,12 +161,7 @@ if __name__ == '__main__':
             for c in range(img.shape[0] - target_pattern_.shape[0]):
                 for r in range(img.shape[1] - target_pattern_.shape[1]):
                     roi_ravel_ = img[c:c+target_pattern_.shape[0], r:r+target_pattern_.shape[1]].ravel()
-                    trues_present_ = True
-                    for target_true in target_trues_:
-                        if not roi_ravel_[target_true]:
-                            trues_present_ = False
-                            break
-                    if trues_present_: num_patterns_found_ += 1
+                    if np.all([ roi_ravel_[i] for i in target_trues_ ]): num_patterns_found_ += 1
         
             if num_patterns_found_ != 0:
                 out_ = np.sum(img_) - (num_patterns_found_ * np.sum(target_pattern_))
