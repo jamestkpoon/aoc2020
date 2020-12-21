@@ -11,10 +11,6 @@ SIDES = [ UP, DOWN, LEFT, RIGHT ]
 def get_opposite_direction(side):
     return (side + 2) % 4
 
-INTERIOR = 0
-EDGE = 1
-CORNER = 2
-
 class Tile:
     def __init__(self, data):
         self._data = data
