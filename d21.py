@@ -48,7 +48,6 @@ def match_allergens_to_ingredients(ingredients, allergens, foods):
             hits_ = np.where(m_[r,:])[0]
             if len(hits_) == 1:
                 dict_[allergens[hits_[0]]] = ingredients[r]
-                m_[r,:] = False
                 m_[:,hits_[0]] = False
             
     return dict_
