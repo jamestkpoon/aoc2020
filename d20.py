@@ -82,27 +82,23 @@ def count_edge_instances(tiles):
     
     return out_
     
-def typify_tiles(tiles, edge_instance_counts):
+def find_corners(tiles, edge_instance_counts):
     corner_tile_keys_ = []
-    edge_tile_keys_ = []
-    interior_tile_keys_ = []
     for tile_id,tile in tiles.items():
         num_unique_sides_ = sum([ edge_instance_counts[tile.get_symmetrical_edge_hash(side)] == 1 for side in SIDES ])
-        if num_unique_sides_ == 0: interior_tile_keys_.append(tile_id)
-        elif num_unique_sides_ == 1: edge_tile_keys_.append(tile_id)
-        else: corner_tile_keys_.append(tile_id)
+        if num_unique_sides_ == 2: corner_tile_keys_.append(tile_id)
         
-    return interior_tile_keys_, edge_tile_keys_, corner_tile_keys_
+    return corner_tile_keys_
     
-def grow(tiles, start_idx, direction, candidates):
+def grow(tiles, start_idx, direction, candidates, out_size_limit):
     out_ = [ start_idx ]
     opposite_direction_ = get_opposite_direction(direction)
     
-    while len(candidates) > 0:
+    while len(candidates) > 0 and len(out_) < out_size_limit:
         matched_ = False
         for tile_id in candidates:
-            edge_to_match_ = tiles_[out_[-1]].get_edge(opposite_direction_)
-            if tiles[tile_id].try_transform_to_match(direction, edge_to_match_):
+            edge_to_match_ = tiles_[out_[-1]].get_edge(direction)
+            if tiles[tile_id].try_transform_to_match(opposite_direction_, edge_to_match_):
                 out_.append(tile_id)
                 candidates.remove(tile_id)
                 matched_ = True
@@ -117,29 +113,24 @@ if __name__ == '__main__':
         
     tiles_ = parse_input(data_)
     edge_instance_counts_ = count_edge_instances(tiles_)
-    interior_tile_keys_, edge_tile_keys_, corner_tile_keys_ = typify_tiles(tiles_, edge_instance_counts_)
+    corner_tile_keys_ = find_corners(tiles_, edge_instance_counts_)
 
     if sys.argv[2] == '1':
         out_ = 1
         for n in corner_tile_keys_: out_ *= n
     elif sys.argv[2] == '2':
         tl_id_ = corner_tile_keys_.pop()
-        if edge_instance_counts_[tiles_[tl_id_].get_symmetrical_edge_hash(UP)] > 1: tiles_[tl_id_].flipud()
+        if edge_instance_counts_[tiles_[tl_id_].get_symmetrical_edge_hash(UP)  ] > 1: tiles_[tl_id_].flipud()
         if edge_instance_counts_[tiles_[tl_id_].get_symmetrical_edge_hash(LEFT)] > 1: tiles_[tl_id_].fliplr()
+        ids_ = list(tiles_.keys())
+        ids_.remove(tl_id_)
         
         tile_idx_map_size_ = int(np.sqrt(len(tiles_)))
         tile_idx_map_ = np.empty([ tile_idx_map_size_, tile_idx_map_size_ ], dtype=np.int)
-        tile_idx_map_[:-1,0] = grow(tiles_, tl_id_, UP, edge_tile_keys_)
-        for r in range(1, tile_idx_map_size_- 1):
-            tile_idx_map_[r,:-1] = grow(tiles_, tile_idx_map_[r,0], LEFT, interior_tile_keys_)
-            tile_idx_map_[r,-1] = grow(tiles_, tile_idx_map_[r,-2], LEFT, edge_tile_keys_)[1]
-        for c in range(1, tile_idx_map_size_ - 1):
-            tile_idx_map_[0,c]  = grow(tiles_, tile_idx_map_[1,c], DOWN, edge_tile_keys_)[1]
-            tile_idx_map_[-1,c] = grow(tiles_, tile_idx_map_[-2,c], UP , edge_tile_keys_)[1]
-        tile_idx_map_[0, -1] = grow(tiles_, tile_idx_map_[0 ,-2], LEFT, corner_tile_keys_)[1]
-        tile_idx_map_[-1, 0] = grow(tiles_, tile_idx_map_[-2, 0], UP,   corner_tile_keys_)[1]
-        tile_idx_map_[-1,-1] = grow(tiles_, tile_idx_map_[-2,-1], UP,   corner_tile_keys_)[1]
-        
+        tile_idx_map_[:,0] = grow(tiles_, tl_id_, DOWN, ids_, tile_idx_map_size_)
+        for r in range(tile_idx_map_size_):
+            tile_idx_map_[r,:] = grow(tiles_, tile_idx_map_[r,0], RIGHT, ids_, tile_idx_map_size_)
+            
         borderless_tile_shape_ = np.asarray(tiles_[tl_id_]._data.shape) - 2
         img_shape_ = tile_idx_map_size_ * borderless_tile_shape_
         img_ = np.empty(tuple(img_shape_), dtype=np.bool)
@@ -157,14 +148,14 @@ if __name__ == '__main__':
             
         out_ = None
         for img in Tile(img_).get_transformations():
-            num_patterns_found_ = 0
+            num_target_pattern_instances_ = 0
             for c in range(img.shape[0] - target_pattern_.shape[0]):
                 for r in range(img.shape[1] - target_pattern_.shape[1]):
                     roi_ravel_ = img[c:c+target_pattern_.shape[0], r:r+target_pattern_.shape[1]].ravel()
-                    if np.all([ roi_ravel_[i] for i in target_trues_ ]): num_patterns_found_ += 1
+                    if np.all([ roi_ravel_[i] for i in target_trues_ ]): num_target_pattern_instances_ += 1
         
-            if num_patterns_found_ != 0:
-                out_ = np.sum(img_) - (num_patterns_found_ * np.sum(target_pattern_))
+            if num_target_pattern_instances_ != 0:
+                out_ = np.sum(img_) - (num_target_pattern_instances_ * len(target_trues_))
                 break
     
     print(out_)
