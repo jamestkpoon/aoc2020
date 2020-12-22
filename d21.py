@@ -40,7 +40,6 @@ def match_allergens_to_ingredients(ingredients, allergens, foods):
     m_ = np.empty([ len(ingredients), len(allergens) ], dtype=np.bool)
     for r in range(m_.shape[0]):
         for c in range(m_.shape[1]):
-            or_ = np.logical_and(foods_without_ingredient_[r], foods_with_allergen_[c])
             m_[r,c] = not np.any(np.logical_and(foods_without_ingredient_[r], foods_with_allergen_[c]))
     
     dict_ = {}
