@@ -91,11 +91,7 @@ if __name__ == '__main__':
         ints_after_1_ = gather_data_after(play(input_, 100, 3), 1, len(input_) - 1)
         out_ = ''.join(map(str, ints_after_1_))
     elif sys.argv[2] == '2':
-        sI_ = max(input_) + 1
-        while len(input_) != 1000000:
-            input_.append(sI_)
-            sI_ += 1
-            
+        input_ += list(range(len(input_) + 1, 1000001))
         ints_after_1_ = gather_data_after(play(input_, 10000000, 3), 1, 2)
         out_ = ints_after_1_[0] * ints_after_1_[1]
 
