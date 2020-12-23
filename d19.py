@@ -27,18 +27,15 @@ def accumulate_possible_messages(rules, rep_limit=1):
     for k,v in rules.items():
         covered_rules_[k] = {}
         if type(v[0]) is int:
-            covered_rules_[k][hash(str(v))] = False if k not in v else 0
+            covered_rules_[k][hash(str(v))] = False
         elif type(v[0]) is list:
             for vv in v:
-                covered_rules_[k][hash(str(vv))] = False if k not in vv else 0
+                covered_rules_[k][hash(str(vv))] = False
                 
     def all_rules_covered():
         for v in covered_rules_.values():
-            for vv in v.values():
-                if type(vv) is bool:
-                    if vv is False: return False
-                elif type(vv) is int: return False
-                
+            if False in v.values(): return False
+            
         return True
             
     a_rule_, b_rule_ = None, None
@@ -54,19 +51,12 @@ def accumulate_possible_messages(rules, rep_limit=1):
  
     def try_accumulate(k, v):
         v_hash_ = hash(str(v))
-        crv_type_ = type(covered_rules_[k][v_hash_])
-        if crv_type_ is bool and covered_rules_[k][v_hash_] == True: return None
-        
+        if covered_rules_[k][v_hash_] == True: return None
         if np.any([ vv not in out_.keys() for vv in v ]): return None
-        else:
-            for vv in v:
-                for vvv in covered_rules_[vv].values():
-                    if type(vvv) is bool and vvv == False: return None
+        for vv in v:
+            if False in covered_rules_[vv].values(): return None
         
-        if crv_type_ is bool: covered_rules_[k][v   _hash_] = True
-        elif crv_type_ is int:
-            covered_rules_[k][v_hash_] += 1
-            if covered_rules_[k][v_hash_] >= rep_limit: covered_rules_[k][v_hash_] = True
+        covered_rules_[k][v_hash_] = True
         
         combos_ = []
         for c in np.ndindex(*[ len(out_[vv]) for vv in v ]):
@@ -94,6 +84,7 @@ if __name__ == '__main__':
         
     rules_, received_messages_ = parse_input(data_)
     possible_messages_ = accumulate_possible_messages(rules_)
+    print(len(possible_messages_[0]))
 
     out_ = 0
     for m in received_messages_:
