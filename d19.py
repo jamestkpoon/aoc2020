@@ -1,6 +1,5 @@
 import sys
-import numpy as np
-from copy import deepcopy
+from collections import Counter
 
 def parse_input(strs):
     idx_ = 0
@@ -8,9 +7,9 @@ def parse_input(strs):
     rules_ = {}
     while len(strs[idx_]) != 0:
         split_ = strs[idx_].split(' ')
-        if split_[1] == '"a"': rule_ = [ 'a' ]
-        elif split_[1] == '"b"': rule_ = [ 'b' ]
-        elif '|' not in split_: rule_ = list(map(int, split_[1:]))
+        if split_[1] == '"a"': rule_ = 'a'
+        elif split_[1] == '"b"': rule_ = 'b'
+        elif '|' not in split_: rule_ = [ list(map(int, split_[1:])) ]
         else:
             pipe_index_ = split_.index('|')
             ruleA_ = list(map(int, split_[1:pipe_index_]))
@@ -21,74 +20,79 @@ def parse_input(strs):
         idx_ += 1
     
     return rules_, strs[idx_+1:]
-
-def accumulate_possible_messages(rules, rep_limit=1):
-    covered_rules_ = {}
-    for k,v in rules.items():
-        covered_rules_[k] = {}
-        if type(v[0]) is int:
-            covered_rules_[k][hash(str(v))] = False
-        elif type(v[0]) is list:
-            for vv in v:
-                covered_rules_[k][hash(str(vv))] = False
-                
-    def all_rules_covered():
-        for v in covered_rules_.values():
-            if False in v.values(): return False
-            
-        return True
-            
-    a_rule_, b_rule_ = None, None
-    for k,v in rules.items():
-        if v == [ 'a' ]:
-            a_rule_ = k
-            covered_rules_[k][hash(str([ 'a' ]))] = True
-        elif v == [ 'b' ]:
-            b_rule = k
-            covered_rules_[k][hash(str([ 'b' ]))] = True
-            
-    out_ = { a_rule_: [ 'a' ], b_rule: [ 'b' ] }
- 
-    def try_accumulate(k, v):
-        v_hash_ = hash(str(v))
-        if covered_rules_[k][v_hash_] == True: return None
-        if np.any([ vv not in out_.keys() for vv in v ]): return None
-        for vv in v:
-            if False in covered_rules_[vv].values(): return None
-        
-        covered_rules_[k][v_hash_] = True
-        
-        combos_ = []
-        for c in np.ndindex(*[ len(out_[vv]) for vv in v ]):
-            combos_.append(''.join([ out_[v[i]][c[i]] for i in range(len(c)) ]))
-                
-        return combos_
     
-    while not all_rules_covered():
-        for k,v in rules.items():
-            if type(v[0]) is int:
-                strs_ = try_accumulate(k, v)
-                if strs_ is not None: out_[k] = strs_
-            elif type(v[0]) is list:
-                for vv in v:
-                    strs_ = try_accumulate(k, vv)
-                    if strs_ is not None:
-                        if k not in out_.keys(): out_[k] = strs_
-                        else: out_[k] += strs_
+def find_terminal_keys(rules):
+    t_, nt_ = [], []
+    for k,v in rules.items():
+        if type(v) is str: t_.append(k)
+        else: nt_.append(k)
+        
+    return t_, nt_
+    
+def cyk(input_string, rules, terminal_keys, non_terminal_keys, target_check_fn):
+    if input_string in [ rules[k] for k in terminal_keys ]: return True
+
+    input_string_length_ = len(input_string)
+    keys_and_strides_ = [ None ] * input_string_length_    
+    for i in range(input_string_length_):
+        for k in terminal_keys:
+            if rules[k][0] == input_string[i]:
+                keys_and_strides_[i] = [ [ k, 1 ] ]
+                break
+                
+    def get_rule_stride(c, rule):
+        c_ = c
+        for rule_key in rule:
+            ok_ = False
+            if c_ >= input_string_length_: return None
+            for key_and_stride in keys_and_strides_[c_]:
+                if key_and_stride[0] == rule_key:
+                    ok_ = True
+                    c_ += key_and_stride[1]
+                    break
+            if not ok_: return None
             
-    return out_
+        return c_ - c
+
+    while True:
+        new_accumulations_ = False        
+        for c in range(input_string_length_):
+            for k in non_terminal_keys:
+                if k in [ key_and_stride[0] for key_and_stride in keys_and_strides_[c] ]: continue                
+                for rule in rules[k]:
+                    stride_ = get_rule_stride(c, rule)
+                    if stride_ is not None:
+                        keys_and_strides_[c].append([ k, stride_ ])
+                        new_accumulations_ = True
+                        break        
+        if target_check_fn(keys_and_strides_): return True
+        elif not new_accumulations_: return False
         
 if __name__ == '__main__':
     with open(sys.argv[1], 'r') as f:
         data_ = f.read().splitlines()
         
     rules_, received_messages_ = parse_input(data_)
-    possible_messages_ = accumulate_possible_messages(rules_)
-    print(len(possible_messages_[0]))
-
-    out_ = 0
-    for m in received_messages_:
-        if m in possible_messages_[0]: out_ += 1
-
-    print(out_)
+    terminal_keys_, non_terminal_keys_ = find_terminal_keys(rules_)
     
+    if sys.argv[2] == '1':
+        def target_check_fn(keys_and_strides):
+            for key_and_stride in keys_and_strides[0]:
+                if key_and_stride[0] == 0 and key_and_stride[1] == len(keys_and_strides): return True
+            return False
+    elif sys.argv[2] == '2':
+        def target_check_fn(keys_and_strides):
+            c_, keys_str_ = 0, ''
+            while c_ < len(keys_and_strides):
+                hit_ = False
+                for key_and_stride in keys_and_strides[c_]:
+                    if key_and_stride[0] == 42 or key_and_stride[0] == 31:
+                        c_ += key_and_stride[1]
+                        keys_str_ += chr(key_and_stride[0])
+                        hit_ = True
+                        break
+                if not hit_: return False
+            counter_ = Counter(keys_str_)
+            return c_ == len(keys_and_strides) and keys_str_.find(chr(31)) > keys_str_.rfind(chr(42)) and counter_[chr(42)] > counter_[chr(31)]
+    
+    print(sum([ cyk(m, rules_, terminal_keys_, non_terminal_keys_, target_check_fn) for m in received_messages_ ]))
