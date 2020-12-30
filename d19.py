@@ -45,10 +45,10 @@ def cyk(input_string, rules, terminal_keys, non_terminal_keys, target_check_fn):
         for rule_key in rule:
             ok_ = False
             if c_ >= input_string_length_: return None
-            for key_and_stride in keys_and_strides_[c_]:
-                if key_and_stride[0] == rule_key:
+            for key, stride in keys_and_strides_[c_]:
+                if key == rule_key:
                     ok_ = True
-                    c_ += key_and_stride[1]
+                    c_ += stride
                     break
             if not ok_: return None
             
@@ -77,22 +77,22 @@ if __name__ == '__main__':
     
     if sys.argv[2] == '1':
         def target_check_fn(keys_and_strides):
-            for key_and_stride in keys_and_strides[0]:
-                if key_and_stride[0] == 0 and key_and_stride[1] == len(keys_and_strides): return True
+            for key, stride in keys_and_strides[0]:
+                if key == 0 and stride == len(keys_and_strides): return True
             return False
     elif sys.argv[2] == '2':
         def target_check_fn(keys_and_strides):
             c_, keys_str_ = 0, ''
             while c_ < len(keys_and_strides):
                 hit_ = False
-                for key_and_stride in keys_and_strides[c_]:
-                    if key_and_stride[0] == 42 or key_and_stride[0] == 31:
-                        c_ += key_and_stride[1]
-                        keys_str_ += chr(key_and_stride[0])
+                for key, stride in keys_and_strides[c_]:
+                    if key == 42 or key == 31:
+                        c_ += stride
+                        keys_str_ += chr(key)
                         hit_ = True
                         break
                 if not hit_: return False
             counter_ = Counter(keys_str_)
-            return c_ == len(keys_and_strides) and keys_str_.find(chr(31)) > keys_str_.rfind(chr(42)) and counter_[chr(42)] > counter_[chr(31)]
+            return c_ == len(keys_and_strides) and counter_[chr(42)] > counter_[chr(31)] and keys_str_.find(chr(31)) > keys_str_.rfind(chr(42))
     
     print(sum([ cyk(m, rules_, terminal_keys_, non_terminal_keys_, target_check_fn) for m in received_messages_ ]))
